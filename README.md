@@ -43,11 +43,15 @@ Ensure you have the following tools installed on your system:
     - `app-arm64-v8a-release.apk` (7.7 MB)
     - `app-x86_64-release.apk` (7.9 MB)
 
-4. Link to apk builds if necessary:
+5. Link to apk builds if necessary:
    ```
    https://drive.google.com/drive/folders/1ILALGigNMlUWoonvQAG9BzITlhlSz7Ho?usp=sharing
    ```
-   
+
+6. Link to video demo if necessary:
+   ```
+   https://youtube.com/shorts/2NPdgikej6M?si=1FLWNuH1f2p7EOZ0
+   ```   
 ---
 
 ## Resources
