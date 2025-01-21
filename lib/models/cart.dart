@@ -4,17 +4,29 @@ import 'cartItem.dart';
 import 'product.dart';
 
 class Cart {
-  List<CartItem> items = [];
+  List<CartItem> items;
+
+  Cart({required this.items});
 
   void addItem(Product product, int quantity) {
-    CartItem item = CartItem(product: product, quantity: quantity);
+    CartItem item = CartItem(product: product, quantity: quantity, discount: 0, gifts: []);
+    item.computeGift();
+    item.computeDiscount();
     items.add(item);
+  }
+
+  double getTotalCost() {
+    double totalCost = 0;
+    for (var item in items) {
+      totalCost += item.quantity * item.product.mrp;
+    }
+    return totalCost;
   }
 
   double getTotalDiscount() {
     double totalDiscount = 0;
     for (var item in items) {
-      totalDiscount += item.computeDiscount();
+      totalDiscount += item.discount;
     }
     return totalDiscount;
   }
@@ -22,7 +34,7 @@ class Cart {
   List<DiscountProduct> getTotalGifts() {
     List<DiscountProduct> gifts = [];
     for (var item in items) {
-      gifts.addAll(item.computeGift());
+      gifts.addAll(item.gifts);
     }
     return gifts;
   }
@@ -30,8 +42,8 @@ class Cart {
   // Function to get a summary of all items in the cart
   void getCartSummary() {
     for (var item in items) {
-      print("Product: ${item.product.title}, Quantity: ${item.quantity}, Total Weight: ${item.getTotalWeight()}kg, Discount: \$${item.computeDiscount()}");
-      var gifts = item.computeGift();
+      print("Product: ${item.product.title}, Quantity: ${item.quantity}, Total Weight: ${item.getTotalWeight()}${item.product.weightUnit}, Discount: \$${item.discount}");
+      var gifts = item.gifts;
       if (gifts.isNotEmpty) {
         print("Gifts with purchase:");
         gifts.forEach((gift) {
@@ -39,7 +51,24 @@ class Cart {
         });
       }
     }
+    print("Total Cost: \$${getTotalCost()}");
     print("Total Discount: \$${getTotalDiscount()}");
     print("Total Gifts: ${getTotalGifts().length}");
+  }
+
+  // Deserialize from JSON
+  factory Cart.fromJson(Map<String, dynamic> json) {
+    return Cart(
+      items: (json['items'] as List)
+          .map((item) => CartItem.fromJson(item))
+          .toList(),
+    );
+  }
+
+  // Serialize to JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'items': items.map((item) => item.toJson()).toList(),
+    };
   }
 }

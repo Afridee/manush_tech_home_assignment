@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:manush_tech_assignment/Screens/cart.dart';
 import 'package:manush_tech_assignment/Screens/productDisplay.dart';
 import 'package:manush_tech_assignment/models/product.dart';
 import 'package:manush_tech_assignment/services/cartService.dart';
@@ -18,13 +19,14 @@ class _ShopState extends State<Shop> {
   final AuthService authService = Get.put(AuthService());
   final CartService cartService = Get.put(CartService());
   Timer? debounceTimer;
-  final int debounceDelay = 2000;
+  final int debounceDelay = 200;
   List<Product> filteredProducts = [];
 
   initialize() async{
     await authService.getUserAndAuthToken();//remove this after
     await cartService.fetchProducts(authToken: authService.authToken!);
     filteredProducts = cartService.products;
+    cartService.initializeCart();
   }
 
   @override
@@ -51,6 +53,12 @@ class _ShopState extends State<Shop> {
         appBar: AppBar(
           title: const Text("Shop"),
           centerTitle: true,
+          actions: [
+            IconButton(onPressed: (){
+              cartService.cart.getCartSummary();
+              Get.to(()=>CartScreen());
+            }, icon: const Icon(Icons.shopping_cart, color: Colors.deepPurple))
+          ],
         ),
         body: Container(
           child: Column(
@@ -66,12 +74,12 @@ class _ShopState extends State<Shop> {
                     filled: true,
                     fillColor: Colors.white,
                     hintText: 'Search products',
-                    prefixIcon: Icon(Icons.search, color: Colors.grey),
+                    prefixIcon: const Icon(Icons.search, color: Colors.grey),
                     contentPadding:
-                    EdgeInsets.symmetric(vertical: 10.0, horizontal: 20.0),
+                    const EdgeInsets.symmetric(vertical: 10.0, horizontal: 20.0),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(30.0),
-                      borderSide: BorderSide(color: Colors.black, width: 2.0),
+                      borderSide: const BorderSide(color: Colors.black, width: 2.0),
                     ),
                   ),
                 ),
@@ -80,7 +88,7 @@ class _ShopState extends State<Shop> {
                 child: Padding(
                   padding: const EdgeInsets.all(15.0),
                   child: GridView.builder(
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2, // Number of columns
                       crossAxisSpacing: 10, // Horizontal space between items
                       mainAxisSpacing: 10, // Vertical space between items
@@ -99,7 +107,7 @@ class _ShopState extends State<Shop> {
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: <Widget>[
                               ClipRRect(
-                                borderRadius: BorderRadius.only(
+                                borderRadius: const BorderRadius.only(
                                   topLeft: Radius.circular(10),
                                   topRight: Radius.circular(10),
                                 ),
@@ -112,25 +120,25 @@ class _ShopState extends State<Shop> {
                               Padding(
                                 padding: const EdgeInsets.all(8.0),
                                 child: Text(filteredProducts[index].title,
-                                    style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold)),
+                                    style: const TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold)),
                               ),
                               Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
                                 child: Text('\$${filteredProducts[index].mrp.toStringAsFixed(2)}',
                                     style: TextStyle(fontSize: 14.0, color: Colors.grey[600])),
                               ),
-                              Spacer(),
+                              const Spacer(),
                               Padding(
                                 padding: const EdgeInsets.only(bottom: 3.0, left: 5, right: 5),
-                                child: index==1 ? ElevatedButton(
+                                child: !cs.existsInCart(product: filteredProducts[index]) ? ElevatedButton(
                                   onPressed: () {
-                                    // Handle add to cart here
+                                    cartService.addToCart(product: filteredProducts[index]);
                                   },
                                   style: ElevatedButton.styleFrom(
                                     primary: Colors.deepPurple, // background (button) color
                                     onPrimary: Colors.white, // foreground (text) color
                                   ),
-                                  child: Text('Add to Cart'),
+                                  child: const Text('Add to Cart'),
                                 ) : Container(
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(20)
@@ -139,21 +147,21 @@ class _ShopState extends State<Shop> {
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: <Widget>[
                                       IconButton(
-                                        icon: Icon(Icons.remove_circle, color: Colors.deepPurple, size: 30),
+                                        icon: const Icon(Icons.remove_circle, color: Colors.deepPurple, size: 30),
                                         onPressed: () {
-                                          // Deduct quantity functionality goes here
+                                          cartService.deductQTY(product: filteredProducts[index]);
                                         },
                                       ),
                                       Container(
                                         child: Text(
-                                          '1', // This would dynamically display the current quantity
-                                          style: TextStyle(fontSize: 18),
+                                          '${cs.cart.items.where((item) => item.product.title==filteredProducts[index].title).first.quantity}', // This would dynamically display the current quantity
+                                          style: const TextStyle(fontSize: 18),
                                         ),
                                       ),
                                       IconButton(
-                                        icon: Icon(Icons.add_circle, color: Colors.deepPurple, size: 30),
+                                        icon: const Icon(Icons.add_circle, color: Colors.deepPurple, size: 30),
                                         onPressed: () {
-                                          // Add quantity functionality goes here
+                                          cartService.addQTY(product: filteredProducts[index]);
                                         },
                                       ),
                                     ],
@@ -176,14 +184,23 @@ class _ShopState extends State<Shop> {
             padding: EdgeInsets.zero,
             children: <Widget>[
               UserAccountsDrawerHeader(
-                accountName: Text(authService.user!.username),
+                accountName: Text(authService.user!.username, style: const TextStyle(fontSize: 20)),
                 accountEmail: Text(authService.user!.phone),
+                currentAccountPicture: CircleAvatar(
+                  backgroundColor: Colors.grey[200],
+                  child: const Icon(
+                    Icons.person, // Dummy profile icon
+                    size: 50,
+                    color: Colors.grey, // Color for the icon
+                  ),
+                ),
               ),
               ListTile(
-                leading: Icon(Icons.logout),
-                title: Text('Logout'),
+                leading: const Icon(Icons.logout),
+                title: const Text('Logout'),
                 onTap: () {
                   authService.signout();
+                  cartService.deleteCart();
                   Navigator.pop(context);
                 },
               ),

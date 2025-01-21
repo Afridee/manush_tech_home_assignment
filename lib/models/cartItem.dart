@@ -5,14 +5,30 @@ import 'package:manush_tech_assignment/models/promotion.dart';
 class CartItem {
   Product product;
   int quantity;
+  List<DiscountProduct> gifts;
+  double discount;
 
-  CartItem({required this.product, required this.quantity});
+  CartItem({required this.product, required this.quantity, required this.gifts, required this.discount});
+
+  add(){
+    quantity = quantity + 1;
+    computeDiscount();
+    computeGift();
+  }
+
+  deduct(){
+    if(quantity>=1){
+      quantity = quantity - 1;
+      computeDiscount();
+      computeGift();
+    }
+  }
 
   double getTotalWeight() {
     return product.weight * quantity;
   }
 
-  double computeDiscount() {
+  computeDiscount() {
     double totalWeight = getTotalWeight();
     double discount = 0;
     Promotion? promotion = product.promotion;
@@ -24,10 +40,10 @@ class CartItem {
         }
       }
     }
-    return discount;
+    this.discount = discount;
   }
 
-  List<DiscountProduct> computeGift() {
+  computeGift() {
     double totalWeight = getTotalWeight();
     List<DiscountProduct> gifts = [];
     Promotion? promotion = product.promotion;
@@ -43,6 +59,29 @@ class CartItem {
         }
       }
     }
-    return gifts;
+    this.gifts = gifts;
+  }
+
+
+  // Deserialize from JSON
+  factory CartItem.fromJson(Map<String, dynamic> json) {
+    return CartItem(
+      product: Product.fromJson(json['product']),
+      quantity: json['quantity'],
+      gifts: (json['gifts'] as List)
+          .map((gift) => DiscountProduct.fromJson(gift))
+          .toList(),
+      discount: json['discount'],
+    );
+  }
+
+  // Serialize to JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'product': product.toJson(),
+      'quantity': quantity,
+      'gifts': gifts.map((gift) => gift.toJson()).toList(),
+      'discount': discount,
+    };
   }
 }

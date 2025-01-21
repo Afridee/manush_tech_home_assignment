@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:get/get.dart';
+import 'package:manush_tech_assignment/models/cart.dart';
 import 'package:manush_tech_assignment/models/cartItem.dart';
 import '../models/discountProduct.dart';
 import '../models/product.dart';
+import '../services/cartService.dart';
 
 // Assuming you have already defined the Product and related classes as above
 class ProductDisplayScreen extends StatefulWidget {
@@ -15,6 +18,9 @@ class ProductDisplayScreen extends StatefulWidget {
 }
 
 class _ProductDisplayScreenState extends State<ProductDisplayScreen> {
+
+  final CartService cartService = Get.put(CartService());
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -65,47 +71,43 @@ class _ProductDisplayScreenState extends State<ProductDisplayScreen> {
                 child: Text('Promotion: ${widget.product.promotion!.title}'),
               ),
             SizedBox(height: 20),
-            false ? Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  IconButton(
-                    icon: Icon(Icons.remove_circle, color: Colors.deepPurple, size: 30),
-                    onPressed: () {
-                      // Deduct quantity functionality goes here
-                    },
-                  ),
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 20),
-                    child: Text(
-                      '1', // This would dynamically display the current quantity
-                      style: TextStyle(fontSize: 18),
+            GetBuilder<CartService>(builder: (cs){
+              return cs.existsInCart(product: widget.product) ? Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    IconButton(
+                      icon: Icon(Icons.remove_circle, color: Colors.deepPurple, size: 30),
+                      onPressed: () {
+                        cartService.deductQTY(product: widget.product);
+                      },
                     ),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.add_circle, color: Colors.deepPurple, size: 30),
-                    onPressed: () {
-                      // Add quantity functionality goes here
-                    },
-                  ),
-                ],
-              ),
-            ) :
-            Center(
-              child: ElevatedButton(
-                onPressed: () {
-                  CartItem item = CartItem(product: widget.product, quantity: 10);
-                  double totalWeight = item.getTotalWeight();
-                  List<DiscountProduct> product = item.computeGift();
-                  double discount = item.computeDiscount();
-                  print(product);
-                  print(discount);
-                  print(totalWeight);
-                },
-                child: Text('Add to Cart', style: TextStyle(fontSize: 20)),
-              ),
-            ),
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 20),
+                      child: Text(
+                        '${cs.cart.items.where((item) => item.product.title==widget.product.title).first.quantity}', // This would dynamically display the current quantity
+                        style: TextStyle(fontSize: 18),
+                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.add_circle, color: Colors.deepPurple, size: 30),
+                      onPressed: () {
+                        cartService.addQTY(product: widget.product);
+                      },
+                    ),
+                  ],
+                ),
+              ) :
+              Center(
+                child: ElevatedButton(
+                  onPressed: () {
+                    cartService.addToCart(product: widget.product);
+                  },
+                  child: Text('Add to Cart', style: TextStyle(fontSize: 20)),
+                ),
+              );
+            }),
             SizedBox(height: 30)
           ],
         ),
